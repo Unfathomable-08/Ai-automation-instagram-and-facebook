@@ -129,6 +129,9 @@ def post_to_instagram_facebook(cl, image_path, caption):
         full_image_path = os.path.abspath(image_path)
         logger.info(f"Using image path: {full_image_path}")
 
+        if not os.path.isfile(full_image_path):
+            raise FileNotFoundError(f"❌ Image file not found at {full_image_path}")
+
         # Launch Chrome with options
         from selenium.webdriver.chrome.options import Options
         options = Options()
@@ -162,37 +165,41 @@ def post_to_instagram_facebook(cl, image_path, caption):
         logger.info("📎 Image path sent to file input.")
         time.sleep(10)  # Give time for image to render
 
-        # Wait for the second popup (after image render)
-        caption_box = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, "//div[@role='dialog']//div[@role='textbox']"))
+        # Find all post buttons and select the last visible one
+        post_buttons = WebDriverWait(driver, 20).until(
+            EC.presence_of_all_elements_located((By.XPATH, "//div[@aria-label='Post']"))
         )
-        caption_box.click()
-        caption_box.send_keys(caption)
-        logger.info("✅ Caption added in the second popup.")
-        time.sleep(2)
 
-        # Now locate the post button *within* the active dialog
-        post_button = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.XPATH, "//div[@role='dialog']//div[@aria-label='Post']"))
-        )
-        driver.execute_script("arguments[0].scrollIntoView(true);", post_button)
+        post_button_to_click = None
+        i = 1
+        for btn in reversed(post_buttons):
+            if btn.is_displayed() and btn.is_enabled():
+                post_button_to_click = btn
+                i += 1
+                print(i)
+                break
+
+        if not post_button_to_click:
+            raise Exception("❌ No visible and enabled 'Post' button found.")
+
+        # Scroll to the correct button
+        driver.execute_script("arguments[0].scrollIntoView(true);", post_button_to_click)
         time.sleep(1)
 
+        # Write caption
+        active_box = driver.switch_to.active_element
+        active_box.send_keys(caption)
+        time.sleep(2)
+
+        # Click the correct post button
         try:
-            post_button.click()
+            post_button_to_click.click()
         except Exception:
             logger.warning("⚠️ Click intercepted, forcing click via JavaScript.")
-            driver.execute_script("arguments[0].click();", post_button)
+            driver.execute_script("arguments[0].click();", post_button_to_click)
 
         logger.info("✅ Facebook post published.")
 
-        try:
-            post_button.click()
-        except Exception:
-            logger.warning("⚠️ Click intercepted, forcing click via JavaScript.")
-            driver.execute_script("arguments[0].click();", post_button)
-
-        logger.info("✅ Facebook post published.")
         time.sleep(10)
         driver.quit()
 
