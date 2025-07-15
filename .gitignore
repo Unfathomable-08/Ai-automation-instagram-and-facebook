@@ -1,3 +1,5 @@
 venv/
 images/
 .env
+ig_session.json
+fb_cookies.pkl
