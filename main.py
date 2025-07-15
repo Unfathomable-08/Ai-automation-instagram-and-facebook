@@ -180,7 +180,7 @@ def post_to_instagram_facebook(cl, image_path, caption):
                 break
 
         if not post_button_to_click:
-            raise Exception("❌ No visible and enabled 'Post' button found.")
+            raise Exception("No visible and enabled 'Post' button found.")
 
         # Scroll to the correct button
         driver.execute_script("arguments[0].scrollIntoView(true);", post_button_to_click)
@@ -195,10 +195,10 @@ def post_to_instagram_facebook(cl, image_path, caption):
         try:
             post_button_to_click.click()
         except Exception:
-            logger.warning("⚠️ Click intercepted, forcing click via JavaScript.")
+            logger.warning("Click intercepted, forcing click via JavaScript.")
             driver.execute_script("arguments[0].click();", post_button_to_click)
 
-        logger.info("✅ Facebook post published.")
+        logger.info("Facebook post published.")
 
         time.sleep(10)
         driver.quit()
@@ -227,9 +227,8 @@ def main():
         hf_token = creds["hf_token"]
 
         # Generate and save image
-        # image_data = generate_image(prompt, hf_token)
-        # image_path = save_image(image_data)
-        image_path = "images/post_20250715_104607.jpg"
+        image_data = generate_image(prompt, hf_token)
+        image_path = save_image(image_data)
 
         # Initialize Instagram client and post
         ig_client = init_instagram_client(creds["ig_username"], creds["ig_password"])
